@@ -1,21 +1,98 @@
-# uxswarm
+<p align="center">
+  <img src="docs/images/logo.png?raw=true" alt="uxswarm Logo" width="130" style="border-radius: 24px;" />
+</p>
 
-Autonomous synthetic user persona swarm and pre-release UX friction profiler.
+<h1 align="center">uxswarm</h1>
 
-uxswarm launches a team of 5 to 10 simulated human personas with distinct psychological archetypes, patience thresholds, and technical literacy levels. The personas navigate web onboarding and checkout funnels via headless Chrome DevTools Protocol (CDP), recording hesitation intervals, dead clicks, and backtrack loops. The system calculates mathematical System Usability Scale (SUS) scores and maps friction points directly to Nielsen Norman usability heuristics.
+<p align="center">
+  <a href="https://github.com/alexandrmotologa/uxswarm/actions/workflows/test.yml"><img src="https://github.com/alexandrmotologa/uxswarm/actions/workflows/test.yml/badge.svg" alt="CI Status" /></a>
+  <img src="https://img.shields.io/badge/go-1.22+-00ADD8.svg?style=flat&logo=go" alt="Go Version" />
+  <img src="https://img.shields.io/badge/react-19-61DAFB.svg?style=flat&logo=react" alt="React 19" />
+  <img src="https://img.shields.io/badge/engine-Chrome_CDP-4285F4.svg?style=flat&logo=googlechrome" alt="Chrome DevTools Protocol" />
+  <img src="https://img.shields.io/badge/storage-SQLite_WAL-003B57.svg?style=flat&logo=sqlite" alt="SQLite WAL" />
+  <img src="https://img.shields.io/badge/license-MIT-green.svg?style=flat" alt="MIT License" />
+</p>
 
-## Key capabilities
+<p align="center">
+  <strong>Autonomous synthetic user persona swarm and pre-release UX friction profiler.</strong><br />
+  Simulates diverse behavioral archetypes through headless Chrome automation, calculates mathematical System Usability Scale (SUS) scores, and generates targeted engineering code patches.
+</p>
 
-- Diverse synthetic personas: Configurable via YAML with archetypes including rushed executives, skeptical security engineers, mobile thumb navigators, and accessibility focused users.
-- Headless CDP automation: Direct browser interaction using Chrome DevTools Protocol for accessibility tree extraction, DOM coordinate mapping, and screenshot capture.
-- Cognitive telemetry: Measures hesitation pauses exceeding 3.5 seconds, dead clicks on non-interactive elements, and navigation backtrack loops.
-- Mathematical SUS evaluation: Computes standardized 10-item System Usability Scale scores (0 to 100) and friction index metrics.
-- A/B Usability Differential: Compares baseline and redesign variants (`uxswarm compare`) to measure delta SUS, delta friction index, and drop-off reductions.
-- Automated code patch generator: Synthesizes concrete CSS, Tailwind, and React code fixes (`uxswarm patch`) to resolve identified heuristic violations.
-- Eye-tracking gaze simulation: Models F-pattern visual hierarchy and saliency fixations across landing and onboarding screens.
-- CI/CD Usability Budgets: Enforces minimum SUS scores and maximum friction thresholds directly in continuous integration workflows with GitHub Step Summary exports.
-- Embedded UX studio: Single Go binary serving a React 19 interface for step-by-step playback, inner speech inspection, and click coordinate heatmaps.
-- Built-in test target: Includes a local SaaS onboarding application (`uxswarm demo`) with intentional friction points for immediate offline evaluation.
+<p align="center">
+  <img src="docs/images/uxswarm_demo.gif?raw=true" alt="uxswarm Interactive Studio Demo" width="850" style="border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.3);" />
+</p>
+
+---
+
+## Executive Overview
+
+uxswarm deploys coordinated clusters of simulated human personas across web applications to audit onboarding funnels, checkout flows, and complex form interfaces prior to production release. 
+
+Personas navigate pages via headless Chrome DevTools Protocol (CDP), extracting the accessibility tree and interactive coordinates. During navigation, the engine captures micro-behaviors including hesitation latencies exceeding 3.5 seconds, dead clicks on non-interactive visual decoys, and navigation backtracks. 
+
+Collected telemetry is compiled into standardized System Usability Scale (SUS) benchmark grades, mapped against the Nielsen Norman 10 Usability Heuristics, and converted into concrete CSS, Tailwind, and React code patches.
+
+---
+
+## Visual Studio & Live Telemetry
+
+### 1. Executive Usability Dashboard & SUS Benchmark
+Aggregates swarm session results into an overarching System Usability Scale score, Friction Index (FI), funnel completion percentage, and per-persona outcome statuses.
+
+<p align="center">
+  <img src="docs/images/dashboard_overview.png?raw=true" alt="uxswarm Executive Dashboard" width="850" style="border-radius: 10px; border: 1px solid #1e293b;" />
+</p>
+
+### 2. Session Replay & Cognitive Thought Stream
+Scrub through step-by-step persona execution, viewing exact mouse click coordinates, form inputs, frustration telemetry, and synthesized inner monologue subtitles.
+
+<p align="center">
+  <img src="docs/images/session_replay.png?raw=true" alt="uxswarm Session Replay" width="850" style="border-radius: 10px; border: 1px solid #1e293b;" />
+</p>
+
+### 3. Friction Coordinates & Simulated Gaze Heatmaps
+Visualizes physical interaction clusters alongside simulated human eye-tracking visual attention models, identifying F-pattern reading drop-offs and dead-click traps.
+
+<p align="center">
+  <img src="docs/images/friction_heatmap.png?raw=true" alt="uxswarm Friction Heatmap" width="850" style="border-radius: 10px; border: 1px solid #1e293b;" />
+</p>
+
+### 4. Nielsen Norman Heuristic Violations & Code Patches
+Every detected usability flaw maps to an established heuristic with severity ratings, affected personas, and actionable engineering code patches ready to copy into your codebase.
+
+<p align="center">
+  <img src="docs/images/heuristic_patches.png?raw=true" alt="uxswarm Heuristic Audit and Code Patches" width="850" style="border-radius: 10px; border: 1px solid #1e293b;" />
+</p>
+
+### 5. A/B Usability Differential Matrix
+Quantifies usability improvements across baseline (Variant A) and redesigned (Variant B) candidate versions, displaying delta SUS score, delta friction, and abandonment reductions.
+
+<p align="center">
+  <img src="docs/images/ab_compare.png?raw=true" alt="uxswarm A/B Usability Differential Suite" width="850" style="border-radius: 10px; border: 1px solid #1e293b;" />
+</p>
+
+### 6. Responsive Viewport Profiling
+Evaluates layouts across desktop viewports (1440x900) and mobile screens (390x844), checking one-handed thumb reach comfort and minimum 44px tap target requirements.
+
+<p align="center">
+  <img src="docs/images/mobile_responsive.png?raw=true" alt="uxswarm Mobile Responsive Profiling" width="360" style="border-radius: 10px; border: 1px solid #1e293b;" />
+</p>
+
+---
+
+## Core Capabilities
+
+- **Diverse Synthetic Personas**: Configurable via YAML with psychological archetypes including rushed CFOs, skeptical security leads, mobile thumb navigators, and accessibility-reliant users.
+- **Pure Go CDP Engine**: Direct browser automation using Chrome DevTools Protocol for accessibility tree extraction, coordinate calculation, and screenshot capture.
+- **Mathematical SUS Scoring**: Standardized 10-item System Usability Scale calculation generating 0 to 100 scores and letter grades (A to F).
+- **A/B Differential Engine**: Direct comparison of baseline and candidate variants to measure delta SUS points, friction index changes, and drop-off reductions.
+- **Automated Code Patching**: Generates production-ready CSS, Tailwind, and React code fixes to eliminate dead clicks and reduce submission hesitations.
+- **Gaze Simulation**: Computational model mapping F-pattern scanning and visual saliency fixations across landing and onboarding screens.
+- **CI/CD Usability Budgets**: Enforces minimum SUS scores and maximum friction thresholds directly in CI pipelines with automated GitHub Step Summary markdown output.
+- **Embedded Web Studio**: Zero-dependency Go binary serving the React 19 interface via `//go:embed`.
+- **Local Test Application**: Includes a built-in multi-step SaaS onboarding app with intentional friction points for testing without external services.
+
+---
 
 ## Installation
 
@@ -23,9 +100,9 @@ uxswarm launches a team of 5 to 10 simulated human personas with distinct psycho
 
 - Go 1.22 or higher
 - Google Chrome or Microsoft Edge installed
-- Node.js 20 or higher (for web studio development only)
+- Node.js 20 or higher (required only when modifying the web studio frontend)
 
-### Build from source
+### Build from Source
 
 ```bash
 git clone https://github.com/alexandrmotologa/uxswarm.git
@@ -33,31 +110,33 @@ cd uxswarm
 go build -o bin/uxswarm.exe ./cmd/uxswarm
 ```
 
-## Quick start
+---
 
-### 1. Run the built-in demo flow
+## Quick Start
 
-Start the local SaaS onboarding app:
+### 1. Launch the Built-in Demo Application
+
+Start the local SaaS onboarding application:
 
 ```bash
 ./bin/uxswarm demo --port 3000
 ```
 
-### 2. Run an automated usability study
+### 2. Execute a Usability Study
 
-Run a 5-persona swarm against the demo flow:
+Run a 5-persona swarm against the onboarding flow:
 
 ```bash
 ./bin/uxswarm test \
   --config examples/personas_b2b_saas.yaml \
   --url http://localhost:3000 \
-  --goal "Sign up, configure workspace, and complete onboarding" \
+  --goal "Complete account registration and workspace onboarding" \
   --output ux_report.json
 ```
 
-### 3. Compare two variants (A/B Usability Diff)
+### 3. Compare Two Design Variants (A/B Usability Diff)
 
-Run an A/B usability comparison across two design variants:
+Evaluate candidate improvements against the baseline:
 
 ```bash
 ./bin/uxswarm compare \
@@ -66,17 +145,17 @@ Run an A/B usability comparison across two design variants:
   --output ab_comparison_report.html
 ```
 
-### 4. Synthesize engineering code patches
+### 4. Generate Usability Code Patches
 
-Generate actionable CSS, Tailwind, and React code fixes:
+Produce actionable CSS, Tailwind, and React fixes for detected issues:
 
 ```bash
 ./bin/uxswarm patch --input ux_report.json
 ```
 
-### 5. Enforce usability budgets in CI/CD
+### 5. Enforce Usability Budgets in CI/CD
 
-Fail the pipeline if the flow does not meet usability standards:
+Fail the build if the application does not meet usability thresholds:
 
 ```bash
 ./bin/uxswarm test \
@@ -87,17 +166,19 @@ Fail the pipeline if the flow does not meet usability standards:
   --github-summary
 ```
 
-### 6. Start the interactive UX studio
+### 6. Launch the Interactive UX Studio
 
-Launch the web studio to review replays, gaze heatmaps, and inner monologues:
+Start the embedded studio to inspect session replays, gaze maps, and heuristics:
 
 ```bash
 ./bin/uxswarm serve --port 8080 --db uxswarm.db
 ```
 
-Open `http://localhost:8080` in your browser.
+Navigate to `http://localhost:8080` in your browser.
 
-## Command reference
+---
+
+## Command Reference
 
 - `uxswarm serve`: Starts the HTTP API daemon and embedded React studio.
   - `--port`: HTTP listen port (default: 8080).
@@ -134,7 +215,9 @@ Open `http://localhost:8080` in your browser.
   - `--port`: HTTP listen port (default: 3000).
 - `uxswarm version`: Prints version and build information.
 
-## Repository layout
+---
+
+## Repository Structure
 
 ```
 uxswarm/
@@ -163,6 +246,8 @@ uxswarm/
 ├── go.mod
 └── README.md
 ```
+
+---
 
 ## License
 

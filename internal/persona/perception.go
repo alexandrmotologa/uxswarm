@@ -115,21 +115,34 @@ func (cp *CognitivePerceiver) DecideNextAction(nodes []browser.DOMNode, currentU
 
 	// 4. Check for Dead Click traps (e.g. non-interactive banners or text styled like buttons)
 	// Impatient or mobile personas occasionally click deceptive elements
-	if (cp.persona.Archetype == config.ArchetypeHighImpatienceLowTech || cp.persona.Archetype == config.ArchetypeMobileThumbDriven) && stepIndex == 2 {
-		for i := range nodes {
-			n := &nodes[i]
-			lowerTxt := strings.ToLower(n.Text)
-			// Element that looks like a button but is not an interactive button
-			if !n.Interactive && (strings.Contains(lowerTxt, "pro plan") || strings.Contains(lowerTxt, "fast setup") || strings.Contains(lowerTxt, "free trial badge")) {
-				return PlannedAction{
-					ActionType:        "click",
-					TargetNode:        n,
-					X:                 n.CenterX,
-					Y:                 n.CenterY,
-					HesitationSeconds: 1.2,
-					IsDeadClick:       true,
-					InnerSpeech:       SynthesizeInnerSpeech(cp.persona, "click", n, 1.2, 0.4, true, false),
-					Reasoning:         "Misclicked non-interactive element that mimicked a button.",
+	if cp.persona.PatienceThresholdSeconds <= 5.0 || cp.persona.Archetype == config.ArchetypeHighImpatienceLowTech || cp.persona.Viewport.IsMobile {
+		if stepIndex <= 4 {
+			for i := range nodes {
+				n := &nodes[i]
+				lowerTxt := strings.ToLower(n.Text + " " + n.AriaLabel)
+				// Element that looks like a button or badge but is not an interactive button
+				if !n.Interactive && !n.Disabled && n.Visible {
+					isDeceptive := n.Role == "button" ||
+						strings.Contains(lowerTxt, "pro plan") ||
+						strings.Contains(lowerTxt, "fast setup") ||
+						strings.Contains(lowerTxt, "free trial") ||
+						strings.Contains(lowerTxt, "upgrade") ||
+						strings.Contains(lowerTxt, "badge") ||
+						strings.Contains(lowerTxt, "discount") ||
+						strings.Contains(lowerTxt, "tier")
+
+					if isDeceptive {
+						return PlannedAction{
+							ActionType:        "click",
+							TargetNode:        n,
+							X:                 n.CenterX,
+							Y:                 n.CenterY,
+							HesitationSeconds: 1.2,
+							IsDeadClick:       true,
+							InnerSpeech:       SynthesizeInnerSpeech(cp.persona, "click", n, 1.2, 0.4, true, false),
+							Reasoning:         fmt.Sprintf("Misclicked non-interactive element %q that mimicked an interactive control.", n.SummaryText()),
+						}
+					}
 				}
 			}
 		}
@@ -248,9 +261,15 @@ func (cp *CognitivePerceiver) generateInputValue(node *browser.DOMNode) string {
 		return fmt.Sprintf("%s@example.com", cleanID)
 	case strings.Contains(descriptor, "workspace") || strings.Contains(descriptor, "company") || strings.Contains(descriptor, "tenant") || strings.Contains(descriptor, "org"):
 		return "Acme Labs"
-	case strings.Contains(descriptor, "name"):
+	case strings.Contains(descriptor, "name") || strings.Contains(descriptor, "user"):
 		return cp.persona.Name
+	case strings.Contains(descriptor, "phone") || strings.Contains(descriptor, "tel"):
+		return "+1-555-0199"
+	case strings.Contains(descriptor, "url") || strings.Contains(descriptor, "website") || strings.Contains(descriptor, "domain"):
+		return "https://example.com"
+	case strings.Contains(descriptor, "city") || strings.Contains(descriptor, "location"):
+		return "San Francisco"
 	default:
-		return "Test Value"
+		return "Active Project"
 	}
 }

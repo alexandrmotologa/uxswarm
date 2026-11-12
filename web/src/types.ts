@@ -81,3 +81,13 @@ export interface Persona {
   };
   traits: string[];
 }
+
+export interface CodePatch {
+  heuristic_id: number;
+  title: string;
+  target_selector?: string;
+  framework: string;
+  before_code: string;
+  after_code: string;
+  explanation: string;
+}

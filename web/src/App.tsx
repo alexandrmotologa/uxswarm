@@ -228,7 +228,7 @@ export function App() {
             )}
 
             {activeTab === 'heuristics' && (
-              <HeuristicCard findings={heuristics} />
+              <HeuristicCard findings={heuristics} runId={selectedRun?.id} />
             )}
 
             {activeTab === 'personas' && (

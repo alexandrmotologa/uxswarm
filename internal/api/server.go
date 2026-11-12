@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alexandrmotologa/uxswarm/internal/browser"
 	"github.com/alexandrmotologa/uxswarm/internal/compare"
 	"github.com/alexandrmotologa/uxswarm/internal/config"
 	"github.com/alexandrmotologa/uxswarm/internal/gaze"
@@ -234,9 +235,46 @@ func (s *Server) handleRunRoutes(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusOK, patches)
 			return
 		case "gaze":
-			// Generate simulated gaze heatmap for active run
+			// Generate simulated gaze heatmap based on real session telemetry and interactions
+			run, _ := s.store.GetRun(runID)
+			goal := "Onboarding Flow"
+			if run != nil && run.Goal != "" {
+				goal = run.Goal
+			}
 			viewport := config.Viewport{Width: 1440, Height: 900, IsMobile: false}
-			gazeMap := gaze.GenerateGazeMap(nil, viewport, "Onboarding Flow")
+
+			sessions, _ := s.store.ListSessionsByRun(runID)
+			var observedNodes []browser.DOMNode
+			seenCoords := make(map[string]bool)
+
+			for _, sess := range sessions {
+				if sess.IsMobile {
+					viewport.IsMobile = true
+				}
+				steps, _ := s.store.ListStepsBySession(sess.ID)
+				for _, st := range steps {
+					if st.X > 0 && st.Y > 0 {
+						key := fmt.Sprintf("%d:%d", st.X, st.Y)
+						if !seenCoords[key] {
+							seenCoords[key] = true
+							tag := "BUTTON"
+							if st.ActionType == "type" {
+								tag = "INPUT"
+							}
+							observedNodes = append(observedNodes, browser.DOMNode{
+								Tag:         tag,
+								CenterX:     st.X,
+								CenterY:     st.Y,
+								Text:        st.TargetDescription,
+								Interactive: !st.IsDeadClick,
+								Visible:     true,
+							})
+						}
+					}
+				}
+			}
+
+			gazeMap := gaze.GenerateGazeMap(observedNodes, viewport, goal)
 			writeJSON(w, http.StatusOK, gazeMap)
 			return
 		default:

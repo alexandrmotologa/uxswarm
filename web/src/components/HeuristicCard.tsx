@@ -1,15 +1,31 @@
-import React, { useState } from 'react';
-import { HeuristicFinding } from '../types';
-import { AlertOctagon, AlertTriangle, Info, Check, Sparkles, Code2, Copy, CheckCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { HeuristicFinding, CodePatch } from '../types';
+import { AlertOctagon, AlertTriangle, Info, Sparkles, Code2, Copy, CheckCheck, Check } from 'lucide-react';
 
 interface HeuristicCardProps {
   findings: HeuristicFinding[];
+  runId?: string;
 }
 
-export const HeuristicCard: React.FC<HeuristicCardProps> = ({ findings }) => {
+export const HeuristicCard: React.FC<HeuristicCardProps> = ({ findings, runId }) => {
   const [selectedSeverity, setSelectedSeverity] = useState<'ALL' | 'CRITICAL' | 'MAJOR' | 'MINOR'>('ALL');
   const [expandedPatch, setExpandedPatch] = useState<number | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [dynamicPatches, setDynamicPatches] = useState<Record<number, CodePatch>>({});
+
+  useEffect(() => {
+    if (!runId) return;
+    fetch(`/api/runs/${runId}/patches`)
+      .then((res) => res.json())
+      .then((patches: CodePatch[]) => {
+        const map: Record<number, CodePatch> = {};
+        (patches || []).forEach((p) => {
+          map[p.heuristic_id] = p;
+        });
+        setDynamicPatches(map);
+      })
+      .catch((err) => console.error('Failed to load dynamic patches:', err));
+  }, [runId]);
 
   const filtered = findings.filter((f) => {
     if (selectedSeverity === 'ALL') return true;
@@ -43,6 +59,13 @@ export const HeuristicCard: React.FC<HeuristicCardProps> = ({ findings }) => {
   };
 
   const getHeuristicPatch = (id: number) => {
+    if (dynamicPatches[id]) {
+      return {
+        framework: dynamicPatches[id].framework,
+        code: dynamicPatches[id].after_code,
+      };
+    }
+
     switch (id) {
       case 1:
         return {

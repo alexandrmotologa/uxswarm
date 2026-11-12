@@ -141,6 +141,12 @@ func ExecuteSwarm(ctx context.Context, opts RunOptions) (*report.ReportData, err
 		}
 		sessionRecords = append(sessionRecords, sessRec)
 
+		if opts.Store != nil {
+			if err := opts.Store.CreateSession(&sessRec); err != nil {
+				fmt.Printf("Warning: failed to create session %s: %v\n", sessID, err)
+			}
+		}
+
 		// Convert steps to store records
 		storeSteps := make([]store.StepRecord, 0, len(steps))
 		for _, st := range steps {
@@ -164,14 +170,12 @@ func ExecuteSwarm(ctx context.Context, opts RunOptions) (*report.ReportData, err
 			}
 			storeSteps = append(storeSteps, sr)
 			if opts.Store != nil {
-				_ = opts.Store.CreateStep(&sr)
+				if err := opts.Store.CreateStep(&sr); err != nil {
+					fmt.Printf("Warning: failed to create step %d for session %s: %v\n", st.Index, sessID, err)
+				}
 			}
 		}
 		storeStepsMap[sessID] = storeSteps
-
-		if opts.Store != nil {
-			_ = opts.Store.CreateSession(&sessRec)
-		}
 
 		if opts.OnSessionEnd != nil {
 			opts.OnSessionEnd(p, summary, susRes)
