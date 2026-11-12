@@ -94,13 +94,14 @@ export const ABCompare: React.FC<ABCompareProps> = ({ runs }) => {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div>
-            <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.25rem' }}>Baseline (Variant A)</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          <div style={{ minWidth: '220px', flex: 1 }}>
+            <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.25rem', whiteSpace: 'nowrap' }}>Baseline (Variant A)</div>
             <select
               value={runAId}
               onChange={(e) => setRunAId(e.target.value)}
               style={{
+                width: '100%',
                 background: '#090d16',
                 border: '1px solid #1e293b',
                 color: 'white',
@@ -116,14 +117,15 @@ export const ABCompare: React.FC<ABCompareProps> = ({ runs }) => {
             </select>
           </div>
 
-          <ArrowRight size={18} color="#64748b" style={{ marginTop: '1.25rem' }} />
+          <ArrowRight size={18} color="#64748b" style={{ marginTop: '1.25rem', flexShrink: 0 }} />
 
-          <div>
-            <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.25rem' }}>Candidate (Variant B)</div>
+          <div style={{ minWidth: '220px', flex: 1 }}>
+            <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.25rem', whiteSpace: 'nowrap' }}>Candidate (Variant B)</div>
             <select
               value={runBId}
               onChange={(e) => setRunBId(e.target.value)}
               style={{
+                width: '100%',
                 background: '#090d16',
                 border: '1px solid #1e293b',
                 color: 'white',

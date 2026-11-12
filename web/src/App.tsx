@@ -164,13 +164,14 @@ export function App() {
         <div style={{
           background: '#090d16',
           borderBottom: '1px solid #1e293b',
-          padding: '8px 2rem',
+          padding: '8px 1.75rem',
           display: 'flex',
           alignItems: 'center',
-          gap: '1rem',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
           fontSize: '0.85rem',
         }}>
-          <span style={{ color: '#94a3b8' }}>Selected Study:</span>
+          <span style={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>Selected Study:</span>
           <select
             value={selectedRun?.id || ''}
             onChange={(e) => {
@@ -181,10 +182,12 @@ export function App() {
               background: '#141e33',
               border: '1px solid #1e293b',
               color: 'white',
-              padding: '4px 10px',
+              padding: '5px 12px',
               borderRadius: '6px',
               outline: 'none',
               cursor: 'pointer',
+              maxWidth: '100%',
+              fontSize: '0.82rem',
             }}
           >
             {runs.map((r) => (

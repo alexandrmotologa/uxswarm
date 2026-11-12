@@ -89,7 +89,7 @@ export const FrictionHeatmap: React.FC<FrictionHeatmapProps> = ({ sessions }) =>
         </div>
 
         {/* Filter buttons */}
-        <div style={{ display: 'flex', gap: '0.5rem', background: '#090d16', padding: '4px', borderRadius: '10px', border: '1px solid #1e293b' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', background: '#090d16', padding: '4px', borderRadius: '10px', border: '1px solid #1e293b', flexWrap: 'wrap' }}>
           <button
             onClick={() => setFilterType('all')}
             style={{
@@ -102,6 +102,8 @@ export const FrictionHeatmap: React.FC<FrictionHeatmapProps> = ({ sessions }) =>
               fontWeight: 600,
               border: 'none',
               cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
               background: filterType === 'all' ? '#2563eb' : 'transparent',
               color: filterType === 'all' ? 'white' : '#94a3b8',
             }}
@@ -121,6 +123,8 @@ export const FrictionHeatmap: React.FC<FrictionHeatmapProps> = ({ sessions }) =>
               fontWeight: 600,
               border: 'none',
               cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
               background: filterType === 'dead_clicks' ? '#ef4444' : 'transparent',
               color: filterType === 'dead_clicks' ? 'white' : '#94a3b8',
             }}
@@ -140,6 +144,8 @@ export const FrictionHeatmap: React.FC<FrictionHeatmapProps> = ({ sessions }) =>
               fontWeight: 600,
               border: 'none',
               cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
               background: filterType === 'hesitations' ? '#f59e0b' : 'transparent',
               color: filterType === 'hesitations' ? 'white' : '#94a3b8',
             }}
@@ -159,6 +165,8 @@ export const FrictionHeatmap: React.FC<FrictionHeatmapProps> = ({ sessions }) =>
               fontWeight: 600,
               border: 'none',
               cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
               background: filterType === 'gaze' ? '#8b5cf6' : 'transparent',
               color: filterType === 'gaze' ? 'white' : '#94a3b8',
             }}

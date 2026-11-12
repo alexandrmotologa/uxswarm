@@ -117,7 +117,7 @@ export const SessionReplay: React.FC<SessionReplayProps> = ({
           Loading session telemetry and frames...
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: '2rem' }}>
+        <div className="session-replay-grid">
           {/* Main Visual Player */}
           <div>
             {/* Virtual Device Bezel */}

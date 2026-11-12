@@ -1,5 +1,5 @@
-import React from 'react';
-import { Activity, PlayCircle, BarChart3, Users, Flame, Plus, GitCompare } from 'lucide-react';
+import React, { useState } from 'react';
+import { Activity, PlayCircle, BarChart3, Users, Flame, Plus, GitCompare, Menu, X } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: 'overview' | 'replay' | 'heatmaps' | 'heuristics' | 'personas' | 'compare';
@@ -8,178 +8,123 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, onOpenNewRun }) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const tabs: {
+    id: 'overview' | 'replay' | 'heatmaps' | 'heuristics' | 'personas' | 'compare';
+    label: string;
+    icon: React.ReactNode;
+  }[] = [
+    { id: 'overview', label: 'Overview', icon: <BarChart3 size={16} /> },
+    { id: 'replay', label: 'Session Replay', icon: <PlayCircle size={16} /> },
+    { id: 'heatmaps', label: 'Heatmap & Gaze', icon: <Flame size={16} /> },
+    { id: 'compare', label: 'A/B Compare', icon: <GitCompare size={16} /> },
+    { id: 'heuristics', label: 'Heuristics & Patches', icon: <Activity size={16} /> },
+    { id: 'personas', label: 'Swarm Catalog', icon: <Users size={16} /> },
+  ];
+
+  const handleSelectTab = (id: typeof activeTab) => {
+    setActiveTab(id);
+    setMobileMenuOpen(false);
+  };
+
   return (
-    <header style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '1rem 2rem',
-      backgroundColor: '#0f172a',
-      borderBottom: '1px solid #1e293b',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-        <div style={{
-          background: 'linear-gradient(135deg, #2563eb, #8b5cf6)',
-          width: '38px',
-          height: '38px',
-          borderRadius: '10px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-        }}>
-          <Activity size={22} />
-        </div>
-        <div>
-          <div style={{ fontWeight: 800, fontSize: '1.25rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            uxswarm <span style={{ fontSize: '0.7rem', padding: '2px 6px', background: '#1e293b', color: '#93c5fd', borderRadius: '4px', fontWeight: 600 }}>STUDIO</span>
+    <header className="header-wrapper">
+      <div className="header-container">
+        {/* Brand */}
+        <div className="header-brand">
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #2563eb, #8b5cf6)',
+              width: '36px',
+              height: '36px',
+              borderRadius: '9px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              flexShrink: 0,
+            }}
+          >
+            <Activity size={20} />
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Synthetic Persona Swarm Usability Profiler</div>
+          <div>
+            <div className="header-brand-title">
+              uxswarm <span className="header-brand-badge">STUDIO</span>
+            </div>
+            <div className="header-brand-subtitle">
+              Synthetic Persona Swarm Usability Profiler
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop Navigation */}
+        <nav className="header-nav">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => handleSelectTab(tab.id)}
+                className={`nav-tab-btn ${isActive ? 'active' : 'inactive'}`}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Actions & Mobile Toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+          <button onClick={onOpenNewRun} className="btn-launch-study">
+            <Plus size={16} />
+            <span className="btn-label">Launch Study</span>
+          </button>
+
+          <button
+            className="mobile-menu-toggle"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle Navigation Menu"
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
       </div>
 
-      <nav style={{ display: 'flex', gap: '0.5rem', background: '#141e33', padding: '4px', borderRadius: '10px', border: '1px solid #1e293b' }}>
-        <button
-          onClick={() => setActiveTab('overview')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '6px 14px',
-            borderRadius: '8px',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            border: 'none',
-            cursor: 'pointer',
-            backgroundColor: activeTab === 'overview' ? '#2563eb' : 'transparent',
-            color: activeTab === 'overview' ? 'white' : '#94a3b8',
-            transition: 'all 0.15s ease',
-          }}
-        >
-          <BarChart3 size={16} /> Overview
-        </button>
+      {/* Mobile Drawer Dropdown */}
+      <div className={`mobile-drawer ${mobileMenuOpen ? 'open' : ''}`}>
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => handleSelectTab(tab.id)}
+              className={`nav-tab-btn ${isActive ? 'active' : 'inactive'}`}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
 
-        <button
-          onClick={() => setActiveTab('replay')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '6px 14px',
-            borderRadius: '8px',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            border: 'none',
-            cursor: 'pointer',
-            backgroundColor: activeTab === 'replay' ? '#2563eb' : 'transparent',
-            color: activeTab === 'replay' ? 'white' : '#94a3b8',
-            transition: 'all 0.15s ease',
-          }}
-        >
-          <PlayCircle size={16} /> Session Replay
-        </button>
-
-        <button
-          onClick={() => setActiveTab('heatmaps')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '6px 14px',
-            borderRadius: '8px',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            border: 'none',
-            cursor: 'pointer',
-            backgroundColor: activeTab === 'heatmaps' ? '#2563eb' : 'transparent',
-            color: activeTab === 'heatmaps' ? 'white' : '#94a3b8',
-            transition: 'all 0.15s ease',
-          }}
-        >
-          <Flame size={16} /> Heatmap & Gaze
-        </button>
-
-        <button
-          onClick={() => setActiveTab('compare')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '6px 14px',
-            borderRadius: '8px',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            border: 'none',
-            cursor: 'pointer',
-            backgroundColor: activeTab === 'compare' ? '#2563eb' : 'transparent',
-            color: activeTab === 'compare' ? 'white' : '#94a3b8',
-            transition: 'all 0.15s ease',
-          }}
-        >
-          <GitCompare size={16} /> A/B Compare
-        </button>
-
-        <button
-          onClick={() => setActiveTab('heuristics')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '6px 14px',
-            borderRadius: '8px',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            border: 'none',
-            cursor: 'pointer',
-            backgroundColor: activeTab === 'heuristics' ? '#2563eb' : 'transparent',
-            color: activeTab === 'heuristics' ? 'white' : '#94a3b8',
-            transition: 'all 0.15s ease',
-          }}
-        >
-          <Activity size={16} /> Heuristics & Patches
-        </button>
-
-        <button
-          onClick={() => setActiveTab('personas')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '6px 14px',
-            borderRadius: '8px',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            border: 'none',
-            cursor: 'pointer',
-            backgroundColor: activeTab === 'personas' ? '#2563eb' : 'transparent',
-            color: activeTab === 'personas' ? 'white' : '#94a3b8',
-            transition: 'all 0.15s ease',
-          }}
-        >
-          <Users size={16} /> Swarm Catalog
-        </button>
-      </nav>
-
-      <div>
-        <button
-          onClick={onOpenNewRun}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '8px 16px',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            boxShadow: '0 2px 4px rgba(37,99,235,0.2)',
-          }}
-        >
-          <Plus size={16} /> Launch Study
-        </button>
+      {/* Mobile Fast-Scroll Tab Rail (Always Accessible on Touch Devices) */}
+      <div className="mobile-nav-rail">
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => handleSelectTab(tab.id)}
+              className={`nav-tab-btn ${isActive ? 'active' : 'inactive'}`}
+              style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
     </header>
   );

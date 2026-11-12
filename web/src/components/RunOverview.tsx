@@ -43,9 +43,9 @@ export const RunOverview: React.FC<RunOverviewProps> = ({ run, sessions, onSelec
         padding: '1.75rem',
         marginBottom: '2rem',
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
               <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>{run.name}</h2>
               <span style={{
                 fontSize: '0.75rem',
@@ -56,11 +56,12 @@ export const RunOverview: React.FC<RunOverviewProps> = ({ run, sessions, onSelec
                 background: run.status === 'completed' ? 'rgba(16,185,129,0.15)' : 'rgba(59,130,246,0.15)',
                 color: run.status === 'completed' ? '#34d399' : '#60a5fa',
                 border: `1px solid ${run.status === 'completed' ? '#059669' : '#2563eb'}`,
+                whiteSpace: 'nowrap',
               }}>
                 {run.status}
               </span>
             </div>
-            <div style={{ fontSize: '0.9rem', color: '#94a3b8', display: 'flex', gap: '1.5rem' }}>
+            <div style={{ fontSize: '0.9rem', color: '#94a3b8', display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
               <span>Target: <strong style={{ color: '#cbd5e1' }}>{run.target_url}</strong></span>
               <span>Goal: <strong style={{ color: '#cbd5e1' }}>{run.goal}</strong></span>
             </div>
@@ -232,21 +233,22 @@ export const RunOverview: React.FC<RunOverviewProps> = ({ run, sessions, onSelec
           <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Click any row to replay session</span>
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-          <thead>
-            <tr style={{ background: '#090d16', borderBottom: '1px solid #1e293b', color: '#94a3b8', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>
-              <th style={{ padding: '0.85rem 1.25rem' }}>Persona & Role</th>
-              <th style={{ padding: '0.85rem 1rem' }}>Device</th>
-              <th style={{ padding: '0.85rem 1rem' }}>SUS Score</th>
-              <th style={{ padding: '0.85rem 1rem' }}>Friction (FI)</th>
-              <th style={{ padding: '0.85rem 1rem' }}>Hesitations</th>
-              <th style={{ padding: '0.85rem 1rem' }}>Dead Clicks</th>
-              <th style={{ padding: '0.85rem 1rem' }}>Outcome</th>
-              <th style={{ padding: '0.85rem 1.25rem', textAlign: 'right' }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sessions.map((sess) => {
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem', minWidth: '700px' }}>
+            <thead>
+              <tr style={{ background: '#090d16', borderBottom: '1px solid #1e293b', color: '#94a3b8', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>
+                <th style={{ padding: '0.85rem 1.25rem', whiteSpace: 'nowrap' }}>Persona & Role</th>
+                <th style={{ padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>Device</th>
+                <th style={{ padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>SUS Score</th>
+                <th style={{ padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>Friction (FI)</th>
+                <th style={{ padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>Hesitations</th>
+                <th style={{ padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>Dead Clicks</th>
+                <th style={{ padding: '0.85rem 1rem', whiteSpace: 'nowrap' }}>Outcome</th>
+                <th style={{ padding: '0.85rem 1.25rem', textAlign: 'right', whiteSpace: 'nowrap' }}>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sessions.map((sess) => {
               const color = getGradeColor(sess.sus_grade);
               return (
                 <tr
@@ -360,6 +362,7 @@ export const RunOverview: React.FC<RunOverviewProps> = ({ run, sessions, onSelec
             })}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
