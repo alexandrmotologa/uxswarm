@@ -1,0 +1,36 @@
+name: Test and Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install web dependencies and build studio
+        working-directory: web
+        run: |
+          npm ci || npm install
+          npm run build
+
+      - name: Run Go tests
+        run: go test -v -race ./...
+
+      - name: Build uxswarm binary
+        run: go build -v -o bin/uxswarm ./cmd/uxswarm

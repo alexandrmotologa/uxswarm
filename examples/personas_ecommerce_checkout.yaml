@@ -1,0 +1,47 @@
+version: "1"
+suite:
+  name: "E-Commerce Checkout Funnel"
+  target_url: "http://localhost:3000/shop"
+  goal: "Add product to cart, proceed to checkout, enter shipping details, and place order."
+  max_session_duration: "3m"
+
+personas:
+  - id: "hurried-mobile-shopper"
+    name: "Alex Rivera (On-the-go Shopper)"
+    age: 26
+    archetype: "MOBILE_THUMB_DRIVEN"
+    patience_threshold_seconds: 4.5
+    technical_literacy: 7
+    attention_span: "LOW"
+    viewport:
+      width: 390
+      height: 844
+      is_mobile: true
+    traits:
+      - "Prefers express checkout like Apple Pay or Google Pay"
+      - "Abandons if checkout forces manual registration before guest checkout"
+      - "Easily annoyed by sticky promo banners covering order buttons"
+
+  - id: "cautious-elderly-buyer"
+    name: "Arthur Pendelton (Retired Educator)"
+    age: 67
+    archetype: "HIGH_IMPATIENCE_LOW_TECH"
+    patience_threshold_seconds: 12.0
+    technical_literacy: 2
+    attention_span: "MEDIUM"
+    traits:
+      - "Needs large, high-contrast buttons and readable fonts"
+      - "Uncertain when order summaries do not display itemized tax and shipping"
+      - "Clicks multiple times when button does not give immediate feedback"
+
+  - id: "bargain-hunter"
+    name: "Mia Zhang (Bargain Hunter)"
+    age: 33
+    archetype: "PRICE_SENSITIVE_SHOPPER"
+    patience_threshold_seconds: 8.0
+    technical_literacy: 8
+    attention_span: "HIGH"
+    traits:
+      - "Searches actively for coupon and promo code inputs"
+      - "Checks return policy and restocking fee disclosures"
+      - "Abandons cart if unexpected shipping surcharges appear at final step"

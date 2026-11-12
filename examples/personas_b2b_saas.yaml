@@ -1,0 +1,73 @@
+version: "1"
+suite:
+  name: "B2B SaaS Onboarding and Workspace Setup"
+  target_url: "http://localhost:3000/signup"
+  goal: "Complete account registration, set workspace name to 'Acme Labs', and invite teammate 'colleague@example.com'."
+  max_session_duration: "3m"
+
+personas:
+  - id: "impatient-executive"
+    name: "Sarah Chen (CFO)"
+    age: 48
+    archetype: "HIGH_IMPATIENCE_LOW_TECH"
+    patience_threshold_seconds: 4.0
+    technical_literacy: 3
+    attention_span: "LOW"
+    traits:
+      - "Skims text without reading paragraphs"
+      - "Focuses only on high-contrast primary action buttons"
+      - "Abandons if unexpected credit card or payment step appears"
+      - "Expects quick one-click social authentication"
+
+  - id: "skeptical-security-lead"
+    name: "Marcus Vance (DevSecOps Lead)"
+    age: 36
+    archetype: "SCRUTINIZER_HIGH_TECH"
+    patience_threshold_seconds: 15.0
+    technical_literacy: 9
+    attention_span: "HIGH"
+    traits:
+      - "Reviews password complexity requirements and hints"
+      - "Looks for explicit two-factor authentication and SSO options"
+      - "Checks privacy policies and terms of service checkboxes"
+      - "Notices unencrypted or ambiguous permission requests"
+
+  - id: "distracted-mobile-user"
+    name: "Elena Rostova (Field Sales Rep)"
+    age: 29
+    archetype: "MOBILE_THUMB_DRIVEN"
+    patience_threshold_seconds: 5.0
+    technical_literacy: 6
+    attention_span: "MEDIUM"
+    viewport:
+      width: 390
+      height: 844
+      is_mobile: true
+    traits:
+      - "Uses one-handed thumb navigation"
+      - "Struggles with tap targets smaller than 44 pixels"
+      - "Frustrated by modal dialogs that cover screen content"
+
+  - id: "accessibility-advocate"
+    name: "David Kim (Accessibility Advocate)"
+    age: 42
+    archetype: "ACCESSIBILITY_RELIANT"
+    patience_threshold_seconds: 10.0
+    technical_literacy: 5
+    attention_span: "HIGH"
+    traits:
+      - "Relies on clear form labels and visible input focus states"
+      - "Requires explicit error messages linked to form controls"
+      - "Confused by icons without accessible aria labels"
+
+  - id: "budget-freelancer"
+    name: "Chloe Martin (Freelance Consultant)"
+    age: 31
+    archetype: "PRICE_SENSITIVE_SHOPPER"
+    patience_threshold_seconds: 6.0
+    technical_literacy: 6
+    attention_span: "MEDIUM"
+    traits:
+      - "Verifies free tier limits before creating account"
+      - "Avoids signing up if pricing details are concealed"
+      - "Values transparent trial duration notices"
