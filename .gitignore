@@ -1,8 +1,8 @@
 # Binaries
 bin/
-dist/
-uxswarm.exe
-uxswarm
+/dist/
+/uxswarm.exe
+/uxswarm
 
 # SQLite databases
 *.db
@@ -13,7 +13,6 @@ uxswarm
 # Node / Vite dependencies and build artifacts
 node_modules/
 web/node_modules/
-web/dist/
 
 # Test outputs and reports
 coverage.out

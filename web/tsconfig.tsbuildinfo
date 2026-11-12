@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/types.ts","./src/components/frictionheatmap.tsx","./src/components/header.tsx","./src/components/heuristiccard.tsx","./src/components/newrunmodal.tsx","./src/components/personabuilder.tsx","./src/components/runoverview.tsx","./src/components/sessionreplay.tsx"],"version":"5.9.3"}
