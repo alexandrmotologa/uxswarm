@@ -1,15 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { SessionRecord, StepRecord } from '../types';
-import { Flame, AlertCircle, Clock, Filter } from 'lucide-react';
+import { Flame, AlertCircle, Clock, Filter, Eye } from 'lucide-react';
 
 interface FrictionHeatmapProps {
   sessions: SessionRecord[];
 }
 
+interface GazePoint {
+  x: number;
+  y: number;
+  intensity: number;
+  duration: number;
+  target?: string;
+}
+
 export const FrictionHeatmap: React.FC<FrictionHeatmapProps> = ({ sessions }) => {
   const [allSteps, setAllSteps] = useState<{ step: StepRecord; personaName: string }[]>([]);
-  const [filterType, setFilterType] = useState<'all' | 'dead_clicks' | 'hesitations'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'dead_clicks' | 'hesitations' | 'gaze'>('all');
   const [hoveredPoint, setHoveredPoint] = useState<{ step: StepRecord; personaName: string } | null>(null);
+  const [gazePoints, setGazePoints] = useState<GazePoint[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -34,6 +43,14 @@ export const FrictionHeatmap: React.FC<FrictionHeatmapProps> = ({ sessions }) =>
         console.error('Failed to load steps for heatmap:', err);
         setLoading(false);
       });
+
+    // Fetch simulated gaze map
+    if (sessions[0]?.run_id) {
+      fetch(`/api/runs/${sessions[0].run_id}/gaze`)
+        .then((res) => res.json())
+        .then((data: GazePoint[]) => setGazePoints(data || []))
+        .catch(() => {});
+    }
   }, [sessions]);
 
   const filteredPoints = allSteps.filter(({ step }) => {
@@ -64,10 +81,10 @@ export const FrictionHeatmap: React.FC<FrictionHeatmapProps> = ({ sessions }) =>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.35rem' }}>
             <Flame size={24} color="#f59e0b" />
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>Friction Coordinates & Hotspots</h2>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>Friction Coordinates & Gaze Heatmap</h2>
           </div>
           <p style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
-            Visual distribution of clicks, misclick traps, and hesitation points across all persona sessions.
+            Visual distribution of clicks, misclick traps, hesitation points, and simulated eye-tracking fixations.
           </p>
         </div>
 
@@ -129,6 +146,25 @@ export const FrictionHeatmap: React.FC<FrictionHeatmapProps> = ({ sessions }) =>
           >
             <Clock size={14} /> Hesitation Hotspots ({hesitationCount})
           </button>
+
+          <button
+            onClick={() => setFilterType('gaze')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              padding: '6px 12px',
+              borderRadius: '6px',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              border: 'none',
+              cursor: 'pointer',
+              background: filterType === 'gaze' ? '#8b5cf6' : 'transparent',
+              color: filterType === 'gaze' ? 'white' : '#94a3b8',
+            }}
+          >
+            <Eye size={14} /> Eye-Tracking Gaze
+          </button>
         </div>
       </div>
 
@@ -157,8 +193,30 @@ export const FrictionHeatmap: React.FC<FrictionHeatmapProps> = ({ sessions }) =>
               opacity: 0.6,
             }} />
 
+            {/* Simulated Eye-Tracking Gaze Heatmap Overlay */}
+            {filterType === 'gaze' && (
+              <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+                {gazePoints.map((gp, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      position: 'absolute',
+                      left: `${Math.min(1050, Math.max(30, gp.x))}px`,
+                      top: `${Math.min(600, Math.max(30, gp.y))}px`,
+                      width: `${Math.round(gp.intensity * 90)}px`,
+                      height: `${Math.round(gp.intensity * 90)}px`,
+                      borderRadius: '50%',
+                      background: `radial-gradient(circle, rgba(239, 68, 68, ${gp.intensity * 0.75}) 0%, rgba(245, 158, 11, ${gp.intensity * 0.45}) 40%, rgba(59, 130, 246, ${gp.intensity * 0.15}) 70%, transparent 100%)`,
+                      transform: 'translate(-50%, -50%)',
+                      filter: 'blur(10px)',
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+
             {/* Coordinates markers */}
-            {filteredPoints.map(({ step, personaName }, idx) => {
+            {filterType !== 'gaze' && filteredPoints.map(({ step, personaName }, idx) => {
               const isDead = step.is_dead_click;
               const isHesitation = step.hesitation_seconds >= 3.5;
 
@@ -166,7 +224,6 @@ export const FrictionHeatmap: React.FC<FrictionHeatmapProps> = ({ sessions }) =>
               if (isDead) color = '#ef4444';
               else if (isHesitation) color = '#f59e0b';
 
-              // Scale coordinates to fit view if necessary
               const posX = Math.min(1050, Math.max(30, step.x));
               const posY = Math.min(600, Math.max(30, step.y));
 
@@ -195,7 +252,7 @@ export const FrictionHeatmap: React.FC<FrictionHeatmapProps> = ({ sessions }) =>
             })}
 
             {/* Hover tooltip card */}
-            {hoveredPoint && (
+            {hoveredPoint && filterType !== 'gaze' && (
               <div style={{
                 position: 'absolute',
                 left: `${Math.min(900, Math.max(40, hoveredPoint.step.x + 20))}px`,
@@ -241,18 +298,27 @@ export const FrictionHeatmap: React.FC<FrictionHeatmapProps> = ({ sessions }) =>
             fontSize: '0.85rem',
             color: '#94a3b8',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444' }} />
-              <span>Dead Click (Misclick Trap)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#f59e0b' }} />
-              <span>Hesitation Hotspot (&gt; 3.5s)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#3b82f6' }} />
-              <span>Standard Interaction</span>
-            </div>
+            {filterType === 'gaze' ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444' }} />
+                <span>Simulated F-Pattern & Visual Saliency Fixations (Tobii Eye-Tracking Model)</span>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ef4444' }} />
+                  <span>Dead Click (Misclick Trap)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#f59e0b' }} />
+                  <span>Hesitation Hotspot (&gt; 3.5s)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#3b82f6' }} />
+                  <span>Standard Interaction</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -5,11 +5,25 @@ import { SessionReplay } from './components/SessionReplay.tsx';
 import { FrictionHeatmap } from './components/FrictionHeatmap.tsx';
 import { HeuristicCard } from './components/HeuristicCard.tsx';
 import { PersonaBuilder } from './components/PersonaBuilder.tsx';
+import { ABCompare } from './components/ABCompare.tsx';
 import { NewRunModal } from './components/NewRunModal.tsx';
 import { RunRecord, SessionRecord, HeuristicFinding } from './types.ts';
+import { Radio } from 'lucide-react';
+
+interface LiveEvent {
+  persona: string;
+  event: {
+    index: number;
+    action_type: string;
+    target_description?: string;
+    inner_speech?: string;
+    hesitation_seconds?: number;
+    is_dead_click?: boolean;
+  };
+}
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'replay' | 'heatmaps' | 'heuristics' | 'personas'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'replay' | 'heatmaps' | 'heuristics' | 'personas' | 'compare'>('overview');
   const [runs, setRuns] = useState<RunRecord[]>([]);
   const [selectedRun, setSelectedRun] = useState<RunRecord | null>(null);
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
@@ -17,6 +31,8 @@ export function App() {
   const [heuristics, setHeuristics] = useState<HeuristicFinding[]>([]);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  const [liveEvent, setLiveEvent] = useState<LiveEvent | null>(null);
+  const [activeStreamingRunId, setActiveStreamingRunId] = useState<string | null>(null);
 
   // Load runs on initial mount
   const fetchRuns = () => {
@@ -63,6 +79,37 @@ export function App() {
       .catch((err) => console.error('Failed to fetch heuristics:', err));
   }, [selectedRun?.id]);
 
+  // Connect to SSE stream when a run is active
+  useEffect(() => {
+    if (!activeStreamingRunId) return;
+
+    const eventSource = new EventSource(`/api/runs/${activeStreamingRunId}/stream`);
+
+    eventSource.addEventListener('step', (e) => {
+      try {
+        const payload: LiveEvent = JSON.parse(e.data);
+        setLiveEvent(payload);
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    eventSource.addEventListener('complete', () => {
+      setActiveStreamingRunId(null);
+      setLiveEvent(null);
+      fetchRuns();
+    });
+
+    eventSource.onerror = () => {
+      eventSource.close();
+      setActiveStreamingRunId(null);
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [activeStreamingRunId]);
+
   const handleSelectSessionAndReplay = (sessionId: string) => {
     setSelectedSessionId(sessionId);
     setActiveTab('replay');
@@ -71,6 +118,7 @@ export function App() {
   const handleRunCreated = (newRun: RunRecord) => {
     setRuns((prev) => [newRun, ...prev]);
     setSelectedRun(newRun);
+    setActiveStreamingRunId(newRun.id);
     setActiveTab('overview');
   };
 
@@ -81,6 +129,35 @@ export function App() {
         setActiveTab={setActiveTab}
         onOpenNewRun={() => setIsModalOpen(true)}
       />
+
+      {/* Live SSE Execution Ticker Bar */}
+      {liveEvent && (
+        <div style={{
+          background: 'linear-gradient(90deg, #1e3a8a, #3b82f6)',
+          color: 'white',
+          padding: '8px 2rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          fontSize: '0.85rem',
+          fontWeight: 600,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Radio size={16} className="animate-pulse" />
+            <span style={{ textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>
+              Live Swarm Stream
+            </span>
+          </div>
+          <div>
+            <strong>[{liveEvent.persona}]</strong> #{liveEvent.event.index} ({liveEvent.event.action_type}): {liveEvent.event.target_description || 'Active Step'}
+            {liveEvent.event.inner_speech && (
+              <span style={{ fontStyle: 'italic', opacity: 0.9, marginLeft: '0.5rem' }}>
+                &ldquo;{liveEvent.event.inner_speech}&rdquo;
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Run Selector subheader if multiple runs exist */}
       {runs.length > 1 && (
@@ -144,6 +221,10 @@ export function App() {
 
             {activeTab === 'heatmaps' && (
               <FrictionHeatmap sessions={sessions} />
+            )}
+
+            {activeTab === 'compare' && (
+              <ABCompare runs={runs} />
             )}
 
             {activeTab === 'heuristics' && (

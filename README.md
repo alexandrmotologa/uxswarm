@@ -10,7 +10,10 @@ uxswarm launches a team of 5 to 10 simulated human personas with distinct psycho
 - Headless CDP automation: Direct browser interaction using Chrome DevTools Protocol for accessibility tree extraction, DOM coordinate mapping, and screenshot capture.
 - Cognitive telemetry: Measures hesitation pauses exceeding 3.5 seconds, dead clicks on non-interactive elements, and navigation backtrack loops.
 - Mathematical SUS evaluation: Computes standardized 10-item System Usability Scale scores (0 to 100) and friction index metrics.
-- Heuristic mapping: Categorizes usability barriers under the 10 Nielsen Norman heuristics with concrete recommendations.
+- A/B Usability Differential: Compares baseline and redesign variants (`uxswarm compare`) to measure delta SUS, delta friction index, and drop-off reductions.
+- Automated code patch generator: Synthesizes concrete CSS, Tailwind, and React code fixes (`uxswarm patch`) to resolve identified heuristic violations.
+- Eye-tracking gaze simulation: Models F-pattern visual hierarchy and saliency fixations across landing and onboarding screens.
+- CI/CD Usability Budgets: Enforces minimum SUS scores and maximum friction thresholds directly in continuous integration workflows with GitHub Step Summary exports.
 - Embedded UX studio: Single Go binary serving a React 19 interface for step-by-step playback, inner speech inspection, and click coordinate heatmaps.
 - Built-in test target: Includes a local SaaS onboarding application (`uxswarm demo`) with intentional friction points for immediate offline evaluation.
 
@@ -52,17 +55,41 @@ Run a 5-persona swarm against the demo flow:
   --output ux_report.json
 ```
 
-### 3. Generate an executive HTML report
+### 3. Compare two variants (A/B Usability Diff)
 
-Generate a standalone HTML report:
+Run an A/B usability comparison across two design variants:
 
 ```bash
-./bin/uxswarm report --input ux_report.json --format html --output usability_report.html
+./bin/uxswarm compare \
+  --url-a http://localhost:3000/v1 \
+  --url-b http://localhost:3000/v2 \
+  --output ab_comparison_report.html
 ```
 
-### 4. Start the interactive UX studio
+### 4. Synthesize engineering code patches
 
-Launch the web studio to review replays, heatmaps, and inner monologues:
+Generate actionable CSS, Tailwind, and React code fixes:
+
+```bash
+./bin/uxswarm patch --input ux_report.json
+```
+
+### 5. Enforce usability budgets in CI/CD
+
+Fail the pipeline if the flow does not meet usability standards:
+
+```bash
+./bin/uxswarm test \
+  --url https://staging.myapp.com/signup \
+  --min-sus 70.0 \
+  --max-friction 1.5 \
+  --allow-abandonment=false \
+  --github-summary
+```
+
+### 6. Start the interactive UX studio
+
+Launch the web studio to review replays, gaze heatmaps, and inner monologues:
 
 ```bash
 ./bin/uxswarm serve --port 8080 --db uxswarm.db
@@ -80,11 +107,23 @@ Open `http://localhost:8080` in your browser.
   - `--url`: Target web application URL.
   - `--goal`: Natural language task description.
   - `--output`: File path for JSON result export.
+  - `--report`: Optional path for standalone HTML report export.
   - `--headless`: Run browser in headless mode (default: true).
-  - `--db`: SQLite database file path.
+  - `--min-sus`: Minimum required average SUS score (fails CI if not met).
+  - `--max-friction`: Maximum allowed Friction Index (fails CI if exceeded).
+  - `--allow-abandonment`: Permitted persona drop-offs (fails CI if false and drop-offs occur).
+  - `--github-summary`: Writes report to GITHUB_STEP_SUMMARY environment variable.
+- `uxswarm compare`: Executes an A/B usability study comparing two variants.
+  - `--url-a`: Baseline variant URL (Variant A).
+  - `--url-b`: Candidate redesign URL (Variant B).
+  - `--output`: Path for comparison report destination.
+  - `--format`: Format (`html`, `markdown`, or `json`).
+- `uxswarm patch`: Generates CSS, Tailwind, and React code fixes for findings.
+  - `--input`: Path to JSON test report.
+  - `--format`: Filter format (`css`, `tailwind`, `html`, `react`, or `all`).
 - `uxswarm audit`: Runs a fast single-page heuristic scan.
   - `--url`: Page URL to audit.
-  - `--device`: Target device profile (desktop or mobile).
+  - `--device`: Target device profile (`desktop` or `mobile`).
   - `--output`: File path for audit findings.
 - `uxswarm report`: Formats test results into human-readable documents.
   - `--run-id`: Run identifier from SQLite database.
@@ -104,15 +143,18 @@ uxswarm/
 ├── internal/
 │   ├── api/                  # HTTP REST and SSE streaming handlers
 │   ├── browser/              # CDP browser session and action actuator
+│   ├── compare/              # A/B Usability Differential engine
 │   ├── config/               # Suite and persona YAML loader
 │   ├── demo/                 # Built-in friction benchmark web app
+│   ├── gaze/                 # Simulated eye-tracking visual attention model
 │   ├── metrics/              # SUS scoring and Nielsen Norman mapping
+│   ├── patch/                # Automated engineering code patch generator
 │   ├── persona/              # Cognitive perception and decision brain
 │   ├── report/               # HTML and Markdown report generator
 │   └── store/                # SQLite database and query layer
 ├── web/                      # React 19 embedded UX studio
 │   ├── src/
-│   │   ├── components/       # Player, heatmap, and scorecards
+│   │   ├── components/       # Player, heatmap, A/B compare, scorecards
 │   │   └── pages/            # Studio, Dashboard, Persona Builder
 │   ├── index.html
 │   └── vite.config.ts

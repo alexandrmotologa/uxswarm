@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -8,7 +9,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alexandrmotologa/uxswarm/internal/compare"
 	"github.com/alexandrmotologa/uxswarm/internal/config"
+	"github.com/alexandrmotologa/uxswarm/internal/gaze"
+	"github.com/alexandrmotologa/uxswarm/internal/metrics"
+	"github.com/alexandrmotologa/uxswarm/internal/patch"
+	"github.com/alexandrmotologa/uxswarm/internal/report"
+	"github.com/alexandrmotologa/uxswarm/internal/runner"
 	"github.com/alexandrmotologa/uxswarm/internal/store"
 )
 
@@ -58,6 +65,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("/api/runs", s.handleRuns)
 	s.mux.HandleFunc("/api/runs/", s.handleRunRoutes)
 	s.mux.HandleFunc("/api/sessions/", s.handleSessionRoutes)
+	s.mux.HandleFunc("/api/compare", s.handleCompare)
 
 	// Static web UI
 	if s.staticFS != nil {
@@ -76,7 +84,7 @@ func (s *Server) registerRoutes() {
 				return
 			}
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			_, _ = w.Write([]byte(`<!DOCTYPE html><html><body><h1>uxswarm API Daemon</h1><p>Embedded studio static assets not attached. Running API mode.</p></body></html>`))
+			_, _ = w.Write([]byte(`<!DOCTYPE html><html><body><h1>uxswarm API Daemon</h1><p>Running API mode.</p></body></html>`))
 		})
 	}
 }
@@ -141,6 +149,34 @@ func (s *Server) handleRuns(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// Asynchronously execute swarm in background and stream live events via SSE
+		go func() {
+			opts := runner.RunOptions{
+				Name:      req.Name,
+				TargetURL: req.TargetURL,
+				Goal:      req.Goal,
+				Store:     s.store,
+				Headless:  true,
+				OnStep: func(p config.Persona, evt metrics.StepEvent) {
+					s.hub.Broadcast(runID, "step", map[string]any{
+						"persona": p.Name,
+						"event":   evt,
+					})
+				},
+				OnSessionEnd: func(p config.Persona, summary *metrics.TelemetrySummary, sus *metrics.SUSResult) {
+					s.hub.Broadcast(runID, "session_end", map[string]any{
+						"persona": p.Name,
+						"summary": summary,
+						"sus":     sus,
+					})
+				},
+			}
+			rep, err := runner.ExecuteSwarm(context.Background(), opts)
+			if err == nil && rep != nil {
+				s.hub.Broadcast(runID, "complete", rep.Run)
+			}
+		}()
+
 		writeJSON(w, http.StatusCreated, run)
 
 	default:
@@ -158,7 +194,6 @@ func (s *Server) handleRunRoutes(w http.ResponseWriter, r *http.Request) {
 
 	runID := parts[0]
 
-	// Check sub-routes: /api/runs/{id}/stream, /api/runs/{id}/sessions, /api/runs/{id}/heuristics
 	if len(parts) > 1 {
 		switch parts[1] {
 		case "stream":
@@ -179,6 +214,30 @@ func (s *Server) handleRunRoutes(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			writeJSON(w, http.StatusOK, findings)
+			return
+		case "patches":
+			findings, _ := s.store.ListHeuristicsByRun(runID)
+			sessions, _ := s.store.ListSessionsByRun(runID)
+			steps := make([]metrics.StepEvent, 0)
+			for _, sess := range sessions {
+				sessSteps, _ := s.store.ListStepsBySession(sess.ID)
+				for _, st := range sessSteps {
+					steps = append(steps, metrics.StepEvent{
+						ActionType:        st.ActionType,
+						TargetSelector:    st.TargetSelector,
+						TargetDescription: st.TargetDescription,
+						IsDeadClick:       st.IsDeadClick,
+					})
+				}
+			}
+			patches := patch.GeneratePatches(findings, steps)
+			writeJSON(w, http.StatusOK, patches)
+			return
+		case "gaze":
+			// Generate simulated gaze heatmap for active run
+			viewport := config.Viewport{Width: 1440, Height: 900, IsMobile: false}
+			gazeMap := gaze.GenerateGazeMap(nil, viewport, "Onboarding Flow")
+			writeJSON(w, http.StatusOK, gazeMap)
 			return
 		default:
 			http.NotFound(w, r)
@@ -221,6 +280,34 @@ func (s *Server) handleSessionRoutes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Error(w, "not found", http.StatusNotFound)
+}
+
+func (s *Server) handleCompare(w http.ResponseWriter, r *http.Request) {
+	runIDA := r.URL.Query().Get("run_a")
+	runIDB := r.URL.Query().Get("run_b")
+
+	if runIDA == "" || runIDB == "" {
+		http.Error(w, "parameters run_a and run_b are required", http.StatusBadRequest)
+		return
+	}
+
+	runA, errA := s.store.GetRun(runIDA)
+	runB, errB := s.store.GetRun(runIDB)
+	if errA != nil || errB != nil {
+		http.Error(w, "one or both runs not found", http.StatusNotFound)
+		return
+	}
+
+	sessA, _ := s.store.ListSessionsByRun(runIDA)
+	sessB, _ := s.store.ListSessionsByRun(runIDB)
+	heurA, _ := s.store.ListHeuristicsByRun(runIDA)
+	heurB, _ := s.store.ListHeuristicsByRun(runIDB)
+
+	repA := &report.ReportData{Run: *runA, Sessions: sessA, Heuristics: heurA}
+	repB := &report.ReportData{Run: *runB, Sessions: sessB, Heuristics: heurB}
+
+	cmp := compare.CompareVariants(repA, repB)
+	writeJSON(w, http.StatusOK, cmp)
 }
 
 func writeJSON(w http.ResponseWriter, status int, data any) {

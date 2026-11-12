@@ -1,9 +1,9 @@
 import React from 'react';
-import { Activity, PlayCircle, BarChart3, Users, Flame, Plus } from 'lucide-react';
+import { Activity, PlayCircle, BarChart3, Users, Flame, Plus, GitCompare } from 'lucide-react';
 
 interface HeaderProps {
-  activeTab: 'overview' | 'replay' | 'heatmaps' | 'heuristics' | 'personas';
-  setActiveTab: (tab: 'overview' | 'replay' | 'heatmaps' | 'heuristics' | 'personas') => void;
+  activeTab: 'overview' | 'replay' | 'heatmaps' | 'heuristics' | 'personas' | 'compare';
+  setActiveTab: (tab: 'overview' | 'replay' | 'heatmaps' | 'heuristics' | 'personas' | 'compare') => void;
   onOpenNewRun: () => void;
 }
 
@@ -96,7 +96,27 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, onOpenN
             transition: 'all 0.15s ease',
           }}
         >
-          <Flame size={16} /> Friction & Coordinates
+          <Flame size={16} /> Heatmap & Gaze
+        </button>
+
+        <button
+          onClick={() => setActiveTab('compare')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '6px 14px',
+            borderRadius: '8px',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            border: 'none',
+            cursor: 'pointer',
+            backgroundColor: activeTab === 'compare' ? '#2563eb' : 'transparent',
+            color: activeTab === 'compare' ? 'white' : '#94a3b8',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <GitCompare size={16} /> A/B Compare
         </button>
 
         <button
@@ -116,7 +136,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, onOpenN
             transition: 'all 0.15s ease',
           }}
         >
-          <Activity size={16} /> Heuristics
+          <Activity size={16} /> Heuristics & Patches
         </button>
 
         <button

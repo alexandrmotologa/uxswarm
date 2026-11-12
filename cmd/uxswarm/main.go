@@ -13,9 +13,11 @@ import (
 	"time"
 
 	"github.com/alexandrmotologa/uxswarm/internal/api"
+	"github.com/alexandrmotologa/uxswarm/internal/compare"
 	"github.com/alexandrmotologa/uxswarm/internal/config"
 	"github.com/alexandrmotologa/uxswarm/internal/demo"
 	"github.com/alexandrmotologa/uxswarm/internal/metrics"
+	"github.com/alexandrmotologa/uxswarm/internal/patch"
 	"github.com/alexandrmotologa/uxswarm/internal/report"
 	"github.com/alexandrmotologa/uxswarm/internal/runner"
 	"github.com/alexandrmotologa/uxswarm/internal/store"
@@ -37,6 +39,10 @@ func main() {
 		cmdServe(os.Args[2:])
 	case "test":
 		cmdTest(os.Args[2:])
+	case "compare", "diff":
+		cmdCompare(os.Args[2:])
+	case "patch":
+		cmdPatch(os.Args[2:])
 	case "report":
 		cmdReport(os.Args[2:])
 	case "audit":
@@ -63,6 +69,8 @@ Usage:
 Commands:
   serve     Launch the HTTP API daemon and embedded React 19 UX studio
   test      Execute an automated usability study with a persona swarm
+  compare   Run an A/B usability study comparing two URLs with delta metrics
+  patch     Generate CSS/Tailwind/HTML code patches for identified issues
   report    Generate executive HTML, Markdown, or JSON usability reports
   audit     Perform a fast single-page heuristic accessibility audit
   demo      Run the built-in SaaS onboarding test target web application
@@ -125,6 +133,12 @@ func cmdTest(args []string) {
 	dbPath := fs.String("db", "uxswarm.db", "SQLite database path")
 	headless := fs.Bool("headless", true, "Run Chromium in headless mode")
 	isDemo := fs.Bool("demo", false, "Start built-in demo server automatically")
+
+	// Usability Budgets & CI/CD Quality Gates
+	minSUS := fs.Float64("min-sus", 0.0, "Minimum required SUS score (fails CI if not met)")
+	maxFriction := fs.Float64("max-friction", 0.0, "Maximum allowed Friction Index (fails CI if exceeded)")
+	allowAbandonment := fs.Bool("allow-abandonment", true, "Allow persona abandonment (fails CI if false and drop-offs occur)")
+	githubSummary := fs.Bool("github-summary", false, "Write Markdown report to GITHUB_STEP_SUMMARY environment variable")
 	_ = fs.Parse(args)
 
 	var demoSrv *demo.Server
@@ -177,12 +191,12 @@ func cmdTest(args []string) {
 	fmt.Printf("Swarm Size : %d synthetic personas\n\n", len(personas))
 
 	opts := runner.RunOptions{
-		Name:       suiteName,
-		TargetURL:  *targetURL,
-		Goal:       *goal,
-		Personas:   personas,
-		Headless:   *headless,
-		Store:      db,
+		Name:      suiteName,
+		TargetURL: *targetURL,
+		Goal:      *goal,
+		Personas:  personas,
+		Headless:  *headless,
+		Store:     db,
 		OnStep: func(p config.Persona, evt metrics.StepEvent) {
 			pauseNotice := ""
 			if evt.HesitationSeconds >= 3.5 {
@@ -244,6 +258,164 @@ func cmdTest(args []string) {
 		} else {
 			fmt.Printf("Exported standalone HTML report to %s\n", *htmlReport)
 		}
+	}
+
+	// GitHub Actions Step Summary support
+	if *githubSummary || os.Getenv("GITHUB_STEP_SUMMARY") != "" {
+		summaryPath := os.Getenv("GITHUB_STEP_SUMMARY")
+		if summaryPath != "" {
+			mdReport, _ := report.GenerateMarkdown(data)
+			_ = os.WriteFile(summaryPath, []byte(mdReport), 0644)
+			fmt.Println("Appended report to GITHUB_STEP_SUMMARY.")
+		}
+	}
+
+	// Usability Budget Validations
+	failedBudgets := make([]string, 0)
+	if *minSUS > 0.0 && data.Run.AverageSUS < *minSUS {
+		failedBudgets = append(failedBudgets, fmt.Sprintf("Average SUS %.1f is below required budget %.1f", data.Run.AverageSUS, *minSUS))
+	}
+	if *maxFriction > 0.0 && data.Run.AverageFriction > *maxFriction {
+		failedBudgets = append(failedBudgets, fmt.Sprintf("Friction Index %.2f exceeds maximum threshold %.2f", data.Run.AverageFriction, *maxFriction))
+	}
+	if !*allowAbandonment {
+		for _, s := range data.Sessions {
+			if s.DroppedOff {
+				failedBudgets = append(failedBudgets, fmt.Sprintf("Persona %s abandoned session (zero abandonment allowed)", s.PersonaName))
+				break
+			}
+		}
+	}
+
+	if len(failedBudgets) > 0 {
+		fmt.Printf("\n[CI USABILITY BUDGET FAILURE]\n")
+		for _, b := range failedBudgets {
+			fmt.Printf("  ! %s\n", b)
+		}
+		os.Exit(1)
+	}
+}
+
+func cmdCompare(args []string) {
+	fs := flag.NewFlagSet("compare", flag.ExitOnError)
+	urlA := fs.String("url-a", "", "Baseline variant URL (Variant A)")
+	urlB := fs.String("url-b", "", "Candidate variant URL (Variant B)")
+	cfgPath := fs.String("config", "", "Path to personas.yaml suite")
+	goal := fs.String("goal", "Complete onboarding flow", "Task goal description")
+	outputPath := fs.String("output", "ab_comparison_report.html", "Comparison report destination")
+	format := fs.String("format", "html", "Output format (html, markdown, or json)")
+	_ = fs.Parse(args)
+
+	if *urlA == "" || *urlB == "" {
+		fmt.Fprintln(os.Stderr, "Error: both --url-a and --url-b are required for comparison")
+		os.Exit(1)
+	}
+
+	var personas []config.Persona
+	if *cfgPath != "" {
+		s, err := config.LoadSuite(*cfgPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error loading suite: %v\n", err)
+			os.Exit(1)
+		}
+		personas = s.Personas
+	} else {
+		personas = config.GetDefaultPersonas()
+	}
+
+	fmt.Printf("\n=== uxswarm A/B Usability Comparison ===\n")
+	fmt.Printf("Variant A : %s\n", *urlA)
+	fmt.Printf("Variant B : %s\n", *urlB)
+	fmt.Printf("Swarm     : %d personas\n\n", len(personas))
+
+	fmt.Println("--> Running swarm across Variant A (Baseline)...")
+	repA, err := runner.ExecuteSwarm(context.Background(), runner.RunOptions{
+		Name:      "Variant A (Baseline)",
+		TargetURL: *urlA,
+		Goal:      *goal,
+		Personas:  personas,
+		Headless:  true,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Variant A run error: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("Variant A Finished: SUS %.1f (Grade %s) | FI %.2f\n\n", repA.Run.AverageSUS, repA.Run.Grade, repA.Run.AverageFriction)
+
+	fmt.Println("--> Running swarm across Variant B (Candidate)...")
+	repB, err := runner.ExecuteSwarm(context.Background(), runner.RunOptions{
+		Name:      "Variant B (Candidate)",
+		TargetURL: *urlB,
+		Goal:      *goal,
+		Personas:  personas,
+		Headless:  true,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Variant B run error: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("Variant B Finished: SUS %.1f (Grade %s) | FI %.2f\n\n", repB.Run.AverageSUS, repB.Run.Grade, repB.Run.AverageFriction)
+
+	cmp := compare.CompareVariants(repA, repB)
+
+	fmt.Println("==================================================")
+	fmt.Printf("A/B EVALUATION WINNER : %s\n", cmp.Winner)
+	fmt.Printf("DELTA SUS SCORE       : %+.1f points\n", cmp.DeltaSUS)
+	fmt.Printf("DELTA FRICTION (FI)   : %+.2f\n", cmp.DeltaFriction)
+	fmt.Printf("DELTA DROP-OFFS       : %+d\n", cmp.DeltaDropOffs)
+	fmt.Println("==================================================")
+	fmt.Printf("Recommendation: %s\n", cmp.Recommendation)
+
+	if err := compare.ExportDiffToFile(cmp, *format, *outputPath); err != nil {
+		fmt.Fprintf(os.Stderr, "Error exporting diff report: %v\n", err)
+	} else {
+		fmt.Printf("\nGenerated %s differential report: %s\n", strings.ToUpper(*format), *outputPath)
+	}
+}
+
+func cmdPatch(args []string) {
+	fs := flag.NewFlagSet("patch", flag.ExitOnError)
+	inputFile := fs.String("input", "ux_report.json", "JSON report containing heuristic findings")
+	framework := fs.String("format", "all", "Filter patch format: css, tailwind, html, react, all")
+	_ = fs.Parse(args)
+
+	raw, err := os.ReadFile(*inputFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to read report %s: %v\n", *inputFile, err)
+		os.Exit(1)
+	}
+
+	var data report.ReportData
+	if err := json.Unmarshal(raw, &data); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to parse JSON report: %v\n", err)
+		os.Exit(1)
+	}
+
+	steps := make([]metrics.StepEvent, 0)
+	for _, sessSteps := range data.StepsMap {
+		for _, s := range sessSteps {
+			steps = append(steps, metrics.StepEvent{
+				ActionType:        s.ActionType,
+				TargetSelector:    s.TargetSelector,
+				TargetDescription: s.TargetDescription,
+				IsDeadClick:       s.IsDeadClick,
+			})
+		}
+	}
+
+	patches := patch.GeneratePatches(data.Heuristics, steps)
+	if len(patches) == 0 {
+		fmt.Println("No patches required. No actionable heuristic violations found.")
+		return
+	}
+
+	fmt.Printf("Synthesized %d engineering code patches:\n\n", len(patches))
+	targetFmt := strings.ToLower(*framework)
+	for _, p := range patches {
+		if targetFmt != "all" && !strings.Contains(strings.ToLower(p.Framework), targetFmt) {
+			continue
+		}
+		fmt.Println(patch.FormatPatchText(p))
 	}
 }
 
